@@ -9,7 +9,9 @@ import jwt from "jsonwebtoken";
 
 dotenv.config();
 const app = express();
-const port = 3000;
+
+// Dynamic port for Render
+const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -55,7 +57,7 @@ const User = mongoose.model("User", UserSchema);
 const Game = mongoose.model("Game", GameSchema);
 const Review = mongoose.model("Review", ReviewSchema);
 
-// JWT Verification Middleware (Still used for login-protected routes)
+// JWT Verification Middleware
 const verifyToken = (req, res, next) => {
   const token = req.headers.authorization;
   if (!token) return res.status(401).json({ error: "Token missing" });
@@ -69,7 +71,7 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-// Register
+// Register Route
 app.post("/register", async (req, res) => {
   const { username, email, password } = req.body;
   if (!username || !email || !password)
@@ -81,11 +83,11 @@ app.post("/register", async (req, res) => {
     await user.save();
     res.status(201).json({ message: "User registered successfully" });
   } catch (err) {
-    res.status(400).json({ error: "Username Already taken or invalid data" });
+    res.status(400).json({ error: "Username already taken or invalid data" });
   }
 });
 
-// Login
+// Login Route
 app.post("/login", async (req, res) => {
   const { usernameOrEmail, password } = req.body;
   if (!usernameOrEmail || !password)
@@ -111,7 +113,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// Check user existence
+// Check if User Exists
 app.get("/check-user", async (req, res) => {
   const login = req.query.login;
   if (!login) return res.status(400).json({ error: "Login query is required" });
@@ -129,7 +131,7 @@ app.get("/check-user", async (req, res) => {
   }
 });
 
-// 🔻 Save game — NO AUTH
+// Save Game (no auth)
 app.post("/save-game", async (req, res) => {
   const { gameData } = req.body;
   if (!gameData)
@@ -146,7 +148,7 @@ app.post("/save-game", async (req, res) => {
       platforms: gameData.platforms,
       rating: gameData.rating,
       released: gameData.released,
-      addedBy: "anonymous", // since no token now
+      addedBy: "anonymous",
       addedAt: new Date(),
       website: gameData.website,
     });
@@ -158,7 +160,7 @@ app.post("/save-game", async (req, res) => {
   }
 });
 
-// Get suggested games
+// Get Suggested Games
 app.get("/suggested-games", async (req, res) => {
   try {
     const games = await Game.find().sort({ addedAt: -1 });
@@ -168,7 +170,7 @@ app.get("/suggested-games", async (req, res) => {
   }
 });
 
-// RAWG API fetch
+// RAWG API Fetch
 async function fetchGameDetailsFromBackend(slug) {
   try {
     const response = await axios.get(`https://api.rawg.io/api/games/${slug}`, {
@@ -180,7 +182,7 @@ async function fetchGameDetailsFromBackend(slug) {
   }
 }
 
-// 🔻 Add yours — NO AUTH
+// Add Yours
 app.post("/addyours", async (req, res) => {
   const { gamename } = req.body;
   if (!gamename) return res.status(400).json({ error: "Game name is required" });
@@ -196,7 +198,7 @@ app.post("/addyours", async (req, res) => {
   }
 });
 
-// Fetch RAWG game by slug
+// Fetch Game by Slug
 app.post("/fetch-game-details", async (req, res) => {
   const { slug } = req.body;
   if (!slug) return res.status(400).json({ error: "Missing slug" });
@@ -211,7 +213,7 @@ app.post("/fetch-game-details", async (req, res) => {
   }
 });
 
-// Add review (Requires Auth)
+// Add Review (Auth Required)
 app.post("/add-review", verifyToken, async (req, res) => {
   const { gameId, reviewText, rating } = req.body;
 
@@ -233,7 +235,7 @@ app.post("/add-review", verifyToken, async (req, res) => {
   }
 });
 
-// Get reviews for a specific game
+// Get Reviews for Game
 app.get("/reviews/:gameId", async (req, res) => {
   const gameId = parseInt(req.params.gameId);
 
@@ -247,7 +249,7 @@ app.get("/reviews/:gameId", async (req, res) => {
   }
 });
 
-// Get reviews count for a specific game
+// Get Reviews Count
 app.get("/reviews-count/:gameId", async (req, res) => {
   const gameId = parseInt(req.params.gameId);
 
@@ -261,7 +263,7 @@ app.get("/reviews-count/:gameId", async (req, res) => {
   }
 });
 
-// Start server
-app.listen(port, 'localhost', () => {
-  console.log(`🚀 Server running on http://localhost:${port}`);
+// Start server for Render deployment
+app.listen(port, "0.0.0.0", () => {
+  console.log(`🚀 Server running on port ${port}`);
 });
