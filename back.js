@@ -131,13 +131,19 @@ app.get("/check-user", async (req, res) => {
   }
 });
 
-// Save Game (no auth)
+// Save Game (with duplicate prevention)
 app.post("/save-game", async (req, res) => {
   const { gameData } = req.body;
   if (!gameData)
     return res.status(400).json({ error: "Game data required" });
 
   try {
+    const existingGame = await Game.findOne({ id: gameData.id });
+
+    if (existingGame) {
+      return res.status(409).json({ message: "Game already exists in the database" });
+    }
+
     const newGame = new Game({
       id: gameData.id,
       slug: gameData.slug,
@@ -154,7 +160,7 @@ app.post("/save-game", async (req, res) => {
     });
 
     await newGame.save();
-    res.status(201).json({ message: "Game saved" });
+    res.status(201).json({ message: "Game saved successfully" });
   } catch (err) {
     res.status(500).json({ error: "Failed to save game" });
   }
